@@ -6,36 +6,36 @@
 #include <stdbool.h>
 #include <math.h>
 
-typedef struct no_heap No;
+typedef struct no_heap No_heap;
 
-int retorna_item(No* a);
+int retorna_item(No_heap* a);
 
-No* retorna_dir(No* a);
+No_heap* retorna_dir(No_heap* a);
 
-No* retorna_esq(No* a);
+No_heap* retorna_esq(No_heap* a);
 
-No* retorna_pai(No* a);
+No_heap* retorna_pai(No_heap* a);
 
-No* retorna_min(No** nos);
+No_heap* retorna_min(No_heap** nos);
 
-int retorna_tam(No** nos);
+int retorna_tam(No_heap** nos);
 
-No* remove_min(No** nos);
+No_heap* remove_min(No_heap** nos);
 
-No* criaNo(int i);
+No_heap* criaNo(int i);
 
-void heapify(No** nos, bool (*compare)(int, int));
+void heapify(No_heap** nos, bool (*compare)(int, int));
 
-void heapify(No** nos, bool (*compare)(int, int));
+void heapify(No_heap** nos, bool (*compare)(int, int));
 
-No** constroi_heap(int* vec, int N);
+No_heap** constroi_heap(int* vec, int N);
 
 bool compara_min(int a, int b);
 
-void trocaItem(No* a, No* b);
+void trocaItem(No_heap* a, No_heap* b);
 
-void imprimeNos(No** nos);
+void imprimeNos(No_heap** nos);
 
-void libera_heap(No** heap);
+void libera_heap(No_heap** heap);
 
 #endif

@@ -1,19 +1,35 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "Graph.h"
+#include "grafo.h"
+#include "fila.h"
+
+#define INFINITO 1000000.0f
 
 typedef struct No 
 {
-    int vertice;
-    float peso;
+    int vertice; // vertice é o numero do nó (node_0, node_1, node_2 ...)
+    float peso; // peso é o peso pra chegar no nó
     struct No* prox;
+
+    struct No* pai;
+    struct No* filho;
+    float distancia;
 } No;
 
 struct Grafo 
 {
     int raiz;
     int numVertices;
-    No** listaAdj;
+    struct No** listaAdj;
+};
+
+struct CamMinimo
+{
+    struct No* fonte;
+    struct No* destino;
+    struct No** filhos;
+    int numFilhos;
+    float distancia;
 };
 
 static No* Cria_No(int vertice, float peso)
@@ -22,6 +38,11 @@ static No* Cria_No(int vertice, float peso)
     no->vertice = vertice;
     no->peso = peso;
     no->prox = NULL;
+
+    // para o djikstra
+    no->pai = NULL;
+    no->distancia = INFINITO;
+    
     return no;
 }
 
@@ -111,4 +132,102 @@ void Imprime_Grafo(Grafo* graph)
         }
         printf("\n");
     }
+}
+
+
+// INICIO DA PARTE DO DJIKSTRA
+/*
+Lógica do algoritmo: pseudocódigo 
+
+Djikstra(G, w, s)
+    Inicializa-Single-Source(G, s)
+    S = 0
+    Q = V[G]
+    while Q != 0
+        u = Extract-Min(Q)
+        S = S U {u}
+        for each vertex v in Adj[u]
+            Relax(u, v, w)
+    return S    
+*/
+
+// struct camMinimo
+// {
+//     struct No* fonte;
+//     struct No* pai;
+//     struct No* destino;
+//     struct No** filhos;
+//     int numFilhos;
+//     float distancia;
+// };
+
+
+CamMinimo** inicia_caminhosMinimos(Grafo* g){
+    int numVertices = g->numVertices;
+    CamMinimo** caminhosMinimos = (CamMinimo**)malloc(numVertices * sizeof(CamMinimo*));
+    
+    for(int i=0; i<numVertices; i++){
+        CamMinimo* cam = (CamMinimo*)malloc(sizeof(CamMinimo));
+        cam->fonte = g->raiz;
+        cam->destino = g->listaAdj[i];
+        cam->filhos = (CamMinimo**)malloc(numVertices * sizeof(CamMinimo*));
+        cam->numFilhos = 0;
+        cam->distancia = INFINITO;
+        caminhosMinimos[i] = cam;
+    }
+}
+
+
+void relaxa_vertice(CamMinimo* caminho, Grafo* grafo, int indice){
+    int numVertices = grafo->numVertices;
+
+    // visita a lista de adjacencia do vértice e faz o relaxamento
+    No* no = grafo->listaAdj[indice];
+    while(no){
+        int vertice = no->vertice;
+        float peso = no->peso;
+        if(no->distancia > caminho->distancia  + peso){
+            no->distancia = caminho->distancia + peso;
+            no->pai = caminho->filhos[caminho->numFilhos];
+            caminho->filhos[caminho->numFilhos] = no;
+            caminho->numFilhos++;
+        }
+        no = no->prox;
+    }
+
+}
+
+
+void Djikstra(Grafo* grafo, int src){
+    PQ* pq = PQ_init();
+    No** vistos; 
+    while(!PQ_empty(pq)){
+        int u = PQ_delmin(pq);
+        insere(vistos, u);
+        No* no = grafo->listaAdj[u];
+        relaxa_vertice(caminho, grafo, u);
+    }
+    PQ_finish(pq);
+}
+
+
+void imprime_caminhosMinimos(CamMinimo** caminhosMinimos, Grafo* grafo){
+    
+    CamMinimo* cam = caminhosMinimos[0];
+    // inicia fila de prioridade com os caminhos minimos
+    PQ* pq = PQ_init(NULL, grafo->numVertices);
+    while(!PQ_empty(pq)){
+        // retira da fila de prioridades o caminho com menor distancia
+        printf("SHORTEST PATH TO node_%d: ");
+        
+        for(int i=cam->numFilhos; i<=0; i--){
+            print("node_%d ", cam->filhos[i]->vertice);
+            if(i > 0){
+                printf("<- ");
+            }
+        }
+
+        printf(" (Distance: %.2f)\n", cam->distancia);
+    }
+    
 }

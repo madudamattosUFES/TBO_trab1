@@ -4,39 +4,40 @@
 #include <stdbool.h>
 #include "heap.h"
 
+
 struct no_heap{
     int item;
-    No* dir;
-    No* esq;
-    No* pai;
+    No_heap* dir;
+    No_heap* esq;
+    No_heap* pai;
 };
 
-int retorna_item(No* a){
+int retorna_item(No_heap* a){
     return a->item;
 }
 
-No* retorna_dir(No* a){
+No_heap* retorna_dir(No_heap* a){
     return a->dir;
 }
 
-No* retorna_esq(No* a){
+No_heap* retorna_esq(No_heap* a){
     return a->esq;
 }
 
-No* retorna_pai(No* a){
+No_heap* retorna_pai(No_heap* a){
     return a->pai;
 }
 
-No* retorna_min(No** nos){
+No_heap* retorna_min(No_heap** nos){
     return nos[1];
 }
 
-int retorna_tam(No** nos){
+int retorna_tam(No_heap** nos){
     return nos[0]->item;
 }
 
-No* criaNo(int i){
-    No* a = malloc(sizeof(No));
+No_heap* criaNo(int i){
+    No_heap* a = malloc(sizeof(No_heap));
 
     a->item = i;
     a->dir = NULL;
@@ -47,7 +48,7 @@ No* criaNo(int i){
 }
 
 // Ajeita a heap de uma árvore binária construída, trazendo os nós de baixo para cima um por um. 
-void heapify(No** nos, bool (*compare)(int, int)){
+void heapify(No_heap** nos, bool (*compare)(int, int)){
 
     int N = nos[0]->item;
     int i, j;
@@ -75,9 +76,9 @@ void heapify(No** nos, bool (*compare)(int, int)){
 // A árvore binária está construída e possui a raiz em nos[1]. 
 // O índice 0 no vetor de nós (nos[0]) armazena a quantidade de nós (itens) na árvore.  
 // Retorna o vetor de nós
-No** constroi_heap(int* vec, int N){
+No_heap** constroi_heap(int* vec, int N){
 
-    No** nos = malloc((N+1) * sizeof(No*));
+    No_heap** nos = malloc((N+1) * sizeof(No_heap*));
 
     // Armazena a quantidade de iten no índice 0 
     nos[0] = criaNo(N);
@@ -107,25 +108,25 @@ No** constroi_heap(int* vec, int N){
 
 
 // Retorna o nó que possui o item de valor mínimo
-No* remove_min(No** nos){
+No_heap* remove_min(No_heap** nos){
     if(!nos || nos[0]->item <= 0) return NULL;
 
     int N = nos[0]->item;
     
     if (N == 1) { // Se só há um elemento, apenas remove e retorna
-        No* minRef = nos[1];
+        No_heap* minRef = nos[1];
         nos[0]->item = 0;
         return minRef;
     }
     
     // troca o nó da cabeça da árvore com o ultimo
     trocaItem(nos[1], nos[N]);
-    No* minRef = nos[N];
+    No_heap* minRef = nos[N];
     // nos[N] = NULL; 
     N = --nos[0]->item; // atualiza N
 
     // Processo de sink down para ajustar a heap
-    No* atual = nos[1];
+    No_heap* atual = nos[1];
 
     // realiza o heapify novamente p/ ajustar a heap
     heapify(nos, compara_min);
@@ -134,7 +135,7 @@ No* remove_min(No** nos){
 }
 
 // Troca os itens(chaves) de dois nós
-void trocaItem(No* a, No* b){
+void trocaItem(No_heap* a, No_heap* b){
     int temp = a->item;
     a->item = b->item;
     b->item = temp;
@@ -143,7 +144,7 @@ void trocaItem(No* a, No* b){
 
 // Imprime os nós a partir do índice 1
 // A impressão é feita linearmente através do vetor de nós
-void imprimeNos(No** nos){
+void imprimeNos(No_heap** nos){
     int N = nos[0]->item;
 
     for(int i=1; i<=N; i++){
@@ -155,7 +156,7 @@ bool compara_min(int a, int b){
     return a < b ? true : false;
 }
 
-void libera_heap(No** heap){
+void libera_heap(No_heap** heap){
     if (!heap) return;
 
     int N = heap[0]->item;

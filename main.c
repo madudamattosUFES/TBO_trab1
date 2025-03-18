@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "Graph.h"
+#include "grafo.h"
 
 int main(int argc, char* argv[])
 {

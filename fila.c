@@ -4,7 +4,7 @@
 #include "heap.h"
 
 struct priority_queue{
-    No** heap;
+    No_heap** heap;
     int iUlt; // índice do último da fila
 };
 
@@ -21,7 +21,7 @@ PQ* PQ_init(int* vec, int N){
 
 // Remove o menor item e retorna o seu valor, caso a vila esteja vazia retorna -1
 int PQ_delmin(PQ* pq){
-    No* minNo = remove_min(pq->heap);
+    No_heap* minNo = remove_min(pq->heap);
     
     if(!minNo) return -1;
 
