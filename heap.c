@@ -90,6 +90,8 @@ Heap* constroi_heap(void** vec, void* tam, bool (*compare)(int, int), int (*reto
     
     int N = retornaChave(tam);
 
+    printf("N: %d\n", N);
+
     heap->nos = malloc((N+1) * sizeof(No_heap*)); 
     heap->tam = N;
     heap->compare = compare;
