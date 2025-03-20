@@ -3,57 +3,55 @@
 #include "fila.h"
 #include "heap.h"
 
-struct priority_queue{
-    No_heap** heap;
+struct priority_queue {
+    Heap* heap;
     int iUlt; // índice do último da fila
 };
 
 // Inicia a fila de prioridades a partir de um vetor de inteiros
-PQ* PQ_init(int* vec, int N){
+PQ* PQ_init(void** vec, void* tam, bool (*compare)(int, int), int (*retornaChave)(void*), void (*liberaItem)(void*), void (*mudaChave)(void* item, int novaChave), void (*imprimeItem)(void* item)) {
     PQ* pq = malloc(sizeof(PQ));
 
-    pq->heap = constroi_heap(vec, 10);
+    pq->heap = constroi_heap(vec, tam, compare, retornaChave, liberaItem, mudaChave, imprimeItem);
 
-    pq->iUlt = retorna_tam(pq->heap);
+    pq->iUlt = retornaChave(tam);
 
     return pq;
 }
 
-// Remove o menor item e retorna o seu valor, caso a vila esteja vazia retorna -1
-int PQ_delmin(PQ* pq){
+// Remove o menor item e retorna o seu valor, caso a fila esteja vazia retorna NULL
+void* PQ_delmin(PQ* pq) {
     No_heap* minNo = remove_min(pq->heap);
     
-    if(!minNo) return -1;
+    if (!minNo) return NULL;
 
-    int item = retorna_item(minNo);
+    void* item = retorna_item(minNo);
 
     free(minNo);
 
     return item;
 }
 
-// Returns the largest item. Dual: min.
-int PQ_min(PQ* pq){
-    return retorna_item(retorna_min(pq->heap));
+void* PQ_min(PQ* pq) {
+    return retorna_item(retorna_min(retornaNos(pq->heap)));
 }
 
-bool PQ_empty(PQ* pq){
-    if(pq->iUlt <= 0) return true;
-    else return false;
+bool PQ_empty(PQ* pq) {
+    return pq->iUlt <= 0;
 }
 
-int PQ_size(PQ* pq){
+int PQ_size(PQ* pq) {
     return pq->iUlt; 
 }
 
-void PQ_finish(PQ* pq){
+void PQ_finish(PQ* pq) {
     libera_heap(pq->heap);
     free(pq);
 }
 
-void PQ_imprime(PQ* pq){
-    if(!pq || pq->iUlt <= 0){
-        printf("\n Fila vazia!");
+void PQ_imprime(PQ* pq) {
+    if (!pq || pq->iUlt <= 0) {
+        printf("\nFila vazia!");
         return;
     }    
     imprimeNos(pq->heap);
