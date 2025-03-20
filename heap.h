@@ -21,11 +21,12 @@ No_heap* criaNo(void* i);
 
 // Funções para manipulação da heap
 void heapify(Heap* heap);
-Heap* constroi_heap(void** vec, void* tam, bool (*compare)(int, int), int (*retornaChave)(void*), void (*liberaItem)(void*), void (*mudaChave)(void* item, int novaChave), void (*imprimeItem)(void* item));
+Heap* constroi_heap(void** vec, void* tam, bool (*compare)(float, float), float (*retornaChave)(void*), void (*liberaItem)(void*), void (*mudaChave)(void* item, float novaChave), void (*imprimeItem)(void* item));
 No_heap* remove_min(Heap* heap);
 void trocaItem(No_heap* a, No_heap* b);
 void imprimeNos(Heap* heap);
-bool compara_min(int a, int b);
+bool compara_min(float a, float b);
 void libera_heap(Heap* heap);
+void decrease_key(Heap* heap, void* item, float newKey);
 
 #endif // HEAP_H

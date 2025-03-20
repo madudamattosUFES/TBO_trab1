@@ -9,12 +9,12 @@ struct priority_queue {
 };
 
 // Inicia a fila de prioridades a partir de um vetor de inteiros
-PQ* PQ_init(void** vec, void* tam, bool (*compare)(int, int), int (*retornaChave)(void*), void (*liberaItem)(void*), void (*mudaChave)(void* item, int novaChave), void (*imprimeItem)(void* item)) {
+PQ* PQ_init(void** vec, void* tam, bool (*compare)(float, float), float (*retornaChave)(void*), void (*liberaItem)(void*), void (*mudaChave)(void* item, float novaChave), void (*imprimeItem)(void* item)) {
     PQ* pq = malloc(sizeof(PQ));
 
     pq->heap = constroi_heap(vec, tam, compare, retornaChave, liberaItem, mudaChave, imprimeItem);
 
-    pq->iUlt = retornaChave(tam);
+    pq->iUlt = (int)retornaChave(tam);
 
     return pq;
 }
@@ -31,6 +31,7 @@ void* PQ_delmin(PQ* pq) {
 
     return item;
 }
+
 
 void* PQ_min(PQ* pq) {
     return retorna_item(retorna_min(retornaNos(pq->heap)));
@@ -55,4 +56,8 @@ void PQ_imprime(PQ* pq) {
         return;
     }    
     imprimeNos(pq->heap);
+}
+
+void PQ_decrease_key(PQ* pq, void* item, float novaChave) {
+    decrease_key(pq->heap, item, novaChave);
 }

@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include "grafo.h"
 #include "fila.h"
+#include <stdint.h>
 
 #define INFINITO 1000000.0f
 
 typedef struct No 
 {
-    int vertice; // vertice é o numero do nó (node_0, node_1, node_2 ...)
-    float peso; // peso é o peso pra chegar no nó
+    int vertice; // vertice é o numero do nó de destino da aresta
+    float peso; // peso é o peso pra chegar no nó destino
     struct No* prox;
 
     struct No* pai;
@@ -23,16 +24,7 @@ struct Grafo
     struct No** listaAdj;
 };
 
-struct CamMinimo
-{
-    struct No* fonte;
-    struct No* destino;
-    struct No** filhos;
-    int numFilhos;
-    float distancia;
-};
-
-static No* Cria_No(int vertice, float peso)
+No* Cria_No(int vertice, float peso)
 {
     No* no = (No*)malloc(sizeof(No));
     no->vertice = vertice;
@@ -113,6 +105,8 @@ Grafo* Le_Grafo(FILE* arquivo)
             if (peso != 0)
                 AdicionaAresta_Grafo(grafo, src, dest, peso);
         }
+        // adiciona uma aresta do grafo para ele mesmo com peso 0
+        AdicionaAresta_Grafo(grafo, src, src, 0.0f);
         fscanf(arquivo, "\n");
     }
 
@@ -127,107 +121,122 @@ void Imprime_Grafo(Grafo* graph)
         printf("Vertex %d: ", i);
         while (temp) 
         {
-            printf("(%d, %.2f) ", temp->vertice, temp->peso);
+            if(temp->vertice != i){
+                printf("(%d, %.2f) ", temp->vertice, temp->peso);
+            }
             temp = temp->prox;
         }
         printf("\n");
     }
 }
 
-
-// INICIO DA PARTE DO DJIKSTRA
-/*
-Lógica do algoritmo: pseudocódigo 
-
-Djikstra(G, w, s)
-    Inicializa-Single-Source(G, s)
-    S = 0
-    Q = V[G]
-    while Q != 0
-        u = Extract-Min(Q)
-        S = S U {u}
-        for each vertex v in Adj[u]
-            Relax(u, v, w)
-    return S    
-*/
-
-// struct camMinimo
-// {
-//     struct No* fonte;
-//     struct No* pai;
-//     struct No* destino;
-//     struct No** filhos;
-//     int numFilhos;
-//     float distancia;
-// };
-
-
-CamMinimo** inicia_caminhosMinimos(Grafo* g){
-    int numVertices = g->numVertices;
-    CamMinimo** caminhosMinimos = (CamMinimo**)malloc(numVertices * sizeof(CamMinimo*));
-    
-    for(int i=0; i<numVertices; i++){
-        CamMinimo* cam = (CamMinimo*)malloc(sizeof(CamMinimo));
-        cam->fonte = g->raiz;
-        cam->destino = g->listaAdj[i];
-        cam->filhos = (CamMinimo**)malloc(numVertices * sizeof(CamMinimo*));
-        cam->numFilhos = 0;
-        cam->distancia = INFINITO;
-        caminhosMinimos[i] = cam;
+void Dijkstra(Grafo* g){
+    if(g == NULL || g->listaAdj == NULL){
+        fprintf(stderr, "Grafo ou listaAdj é NULL.\n");
+        return;
     }
-}
+    
+    int N = g->numVertices;
+
+    // Cria um vetor para armazenar todos os vértices do grafo
+    No** vertices = (No**)malloc(N * sizeof(No*));
+
+    // Cria o nó auxiliar para a primeira PQ
+    No* tam1 = Cria_No(N, 0);
+    tam1->distancia = N;
 
 
-void relaxa_vertice(CamMinimo* caminho, Grafo* grafo, int indice){
-    int numVertices = grafo->numVertices;
-
-    // visita a lista de adjacencia do vértice e faz o relaxamento
-    No* no = grafo->listaAdj[indice];
-    while(no){
-        int vertice = no->vertice;
-        float peso = no->peso;
-        if(no->distancia > caminho->distancia  + peso){
-            no->distancia = caminho->distancia + peso;
-            no->pai = caminho->filhos[caminho->numFilhos];
-            caminho->filhos[caminho->numFilhos] = no;
-            caminho->numFilhos++;
+    //Inicializa a lista de vértices
+    for(int i=0; i<N; i++){
+        for(No* temp = g->listaAdj[i]; temp != NULL; temp = temp->prox){
+            temp->distancia = INFINITO;
+            temp->pai = NULL;
+            temp->filho = NULL;
         }
-        no = no->prox;
+        vertices[i] = g->listaAdj[i];
     }
 
-}
+    // inicializa raiz
+    g->listaAdj[g->raiz]->distancia = 0.0f;
 
+    // Inicializa a primeira PQ usando g->listaAdj e tam1
+    PQ* pq = PQ_init((void**)g->listaAdj, (void*)tam1, 
+                     compara_min, retornaDistancia, liberaItem, mudaDistancia, imprimeItem);
 
-void Djikstra(Grafo* grafo, int src){
-    PQ* pq = PQ_init();
-    No** vistos; 
+    // Cálculo dos caminhos mínimos (PQ1)
     while(!PQ_empty(pq)){
-        int u = PQ_delmin(pq);
-        insere(vistos, u);
-        No* no = grafo->listaAdj[u];
-        relaxa_vertice(caminho, grafo, u);
-    }
-    PQ_finish(pq);
-}
-
-
-void imprime_caminhosMinimos(CamMinimo** caminhosMinimos, Grafo* grafo){
-    
-    CamMinimo* cam = caminhosMinimos[0];
-    // inicia fila de prioridade com os caminhos minimos
-    PQ* pq = PQ_init(NULL, grafo->numVertices);
-    while(!PQ_empty(pq)){
-        // retira da fila de prioridades o caminho com menor distancia
-        printf("SHORTEST PATH TO node_%d: ");
+        No* atual = (No*)PQ_delmin(pq);
+        if(atual == NULL) break;
         
-        for(int i=cam->numFilhos; i<=0; i--){
-            print("node_%d ", cam->filhos[i]->vertice);
-            if(i > 0){
-                printf("<- ");
+        int u = atual->vertice;
+        
+        for(No* vizinho = g->listaAdj[u]; vizinho != NULL; vizinho = vizinho->prox){
+            int v = vizinho->vertice;
+            float peso = vizinho->peso;
+
+            // Relaxamento com decrease-key
+            if(g->listaAdj[v]->distancia > g->listaAdj[u]->distancia + peso){
+                float novoDist = g->listaAdj[u]->distancia + peso;
+                g->listaAdj[v]->distancia = novoDist;
+                g->listaAdj[v]->pai = g->listaAdj[u];
+                // Atualiza a posição do nó na heap da PQ
+                PQ_decrease_key(pq, g->listaAdj[v], novoDist);
             }
         }
-
-        printf(" (Distance: %.2f)\n", cam->distancia);
     }
+
+    // A seguir, usamos uma segunda PQ para imprimir os caminhos mínimos
+    No* tam2 = Cria_No(N, 0);
+    tam2->distancia = N;
     
+
+    PQ* pq2 = PQ_init((void**)vertices, (void*)tam2, 
+                      compara_min, retornaDistancia, liberaItem, mudaDistancia, imprimeItem);
+
+    
+    while(!PQ_empty(pq2)){
+        No* atual = (No*)PQ_delmin(pq2);
+        if(atual == NULL){
+            break;
+        }
+        printf("SHORTEST PATH TO node_%d: ", atual->vertice);
+        No* temp = atual;
+        while(temp != NULL){ 
+            printf("node_%d ", temp->vertice);
+            temp = temp->pai;
+            if(temp != NULL) printf("<- ");
+        }
+        printf("(Distance: %.2f)\n", atual->distancia);
+    }
+
+    PQ_finish(pq);
+    PQ_finish(pq2);
+    free(tam1);
+    free(tam2);
+    free(vertices);
 }
+
+float retornaDistancia(void* i) {
+    No* no = (No*)i;
+    return no->distancia;
+}
+
+bool compara_min(float a, float b) {
+    return a < b;
+}
+
+void imprimeItem(void* i) {
+    No* no = (No*)i;
+    printf("(%d %.2f)", no->vertice, no->distancia);
+}
+
+void liberaItem(void* i) {
+    free(i);
+}
+
+void mudaDistancia(void* item, float novaChave) {
+    No* no = (No*)item;
+    no->distancia = novaChave;
+}
+
+
