@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "grafo.h"
-#include "fila.h"
 #include <stdint.h>
+#include "grafo.h"
+#include <string.h>
+#include "fila.h"
 
 #define INFINITO 1000000.0f
 
@@ -71,43 +72,172 @@ void AdicionaAresta_Grafo(Grafo* grafo, int src, int dest, float peso)
     grafo->listaAdj[src] = no;
 }
 
+// Grafo* Le_Grafo(FILE* arquivo)
+// {
+//     int linhas = 0;
+//     char buffer[1024];
+
+//     // Conta quantas linhas válidas existem (ignorando vazias)
+//     while (fgets(buffer, sizeof(buffer), arquivo)) {
+//         if (buffer[0] != '\n' && buffer[0] != '\0') {
+//             linhas++;
+//         }
+//     }
+
+//     if (linhas < 1) {
+//         printf("Arquivo vazio ou inválido.\n");
+//         return NULL;
+//     }
+
+//     int numVertices = linhas - 1; // uma linha é o cabeçalho com raiz
+
+//     // Cria o grafo
+//     Grafo* grafo = Cria_Grafo(numVertices);
+
+//     // Volta para o início do arquivo
+//     rewind(arquivo);
+
+//     // Lê a raiz
+//     int raiz;
+//     if (fscanf(arquivo, "node_%d\n", &raiz) != 1) {
+//         printf("Erro ao ler a raiz.\n");
+//         Destroi_Grafo(grafo);
+//         return NULL;
+//     }
+//     grafo->raiz = raiz;
+
+//     // Lê as arestas
+//     for (int i = 0; i < numVertices; i++) {
+//         if (!fgets(buffer, sizeof(buffer), arquivo)) break;
+
+//         // Ignora linhas vazias
+//         if (buffer[0] == '\n' || buffer[0] == '\0') {
+//             i--; // repete o índice
+//             continue;
+//         }
+
+//         int src;
+//         char* ptr = buffer;
+
+//         if (sscanf(ptr, "node_%d,", &src) != 1) {
+//             printf("Erro ao ler o nó origem na linha %d: %s\n", i + 2, buffer);
+//             Destroi_Grafo(grafo);
+//             return NULL;
+//         }
+
+//         // Pula o prefixo até o início dos pesos
+//         ptr = strchr(ptr, ',');
+//         if (!ptr) continue;
+//         ptr++; // aponta para depois da vírgula
+
+//         for (int dest = 0; dest < numVertices; dest++) {
+//             if (src == dest)
+//                  continue;
+            
+//             char pesoStr[10];
+//             int charsLidos = 0;
+//             if (sscanf(ptr, " %9[^,],%n", pesoStr, &charsLidos) != 1) break;
+
+//             float peso;
+//             if (strcmp(pesoStr, "bomba") == 0) {
+//                 peso = -1.0f;
+//             } else {
+//                 peso = atof(pesoStr);
+//             }
+
+//             if (src != dest && peso != 0) {
+//                 AdicionaAresta_Grafo(grafo, src, dest, peso);
+//             }
+//             ptr += charsLidos;
+//         }
+
+//         // Adiciona aresta para ele mesmo com peso 0
+//         AdicionaAresta_Grafo(grafo, src, src, 0.0f);
+//     }
+
+//     return grafo;
+// }
+
 Grafo* Le_Grafo(FILE* arquivo)
 {
     int linhas = 0;
-    char c, fim = 0;
-    while ((c = fgetc(arquivo)) != EOF) {
-        if (c == '\n') {
+    char buffer[1024];
+
+    Grafo *grafo = criaGrafo();
+    char *linha = NULL;
+    size_t tamanho_linha = 0;
+    size_t bytes_lidos;
+    int primeiro_no = 1; // flag para indicar se é o primeiro nó lido
+
+    // Conta quantas linhas válidas existem (ignorando vazias)
+    while (fgets(buffer, sizeof(buffer), arquivo)) {
+        if (buffer[0] != '\n' && buffer[0] != '\0') {
             linhas++;
         }
-        fim = c;
     }
-    // Se o último caractere for '\n', significa que houve uma linha em branco extra
-    if (linhas == '\n' && linhas > 0)
-    linhas--;
 
-    int numVertices = linhas; // desconta o cabeçalho
+    if (linhas < 1) {
+        printf("Arquivo vazio ou inválido.\n");
+        return NULL;
+    }
 
+    int numVertices = linhas - 1; // uma linha é o cabeçalho com raiz
+
+    // Cria o grafo
     Grafo* grafo = Cria_Grafo(numVertices);
-    rewind(arquivo);
-    fscanf(arquivo, "node_%d\n", &grafo->raiz);
 
-    int src;
-    while (fscanf(arquivo, "node_%d, ", &src) != EOF)
+    // Volta para o início do arquivo
+    rewind(arquivo);
+
+    while ((bytes_lidos = getline(&linha, &tamanho_linha, arquivo)) != -1)
     {
-        for (int dest = 0; dest < numVertices; dest++)
+        // Remove newline e quebras
+        linha[strcspn(linha, "\r\n")] = '\0';
+
+        // Extrai número do nó
+        char *token = strtok(linha, ",");
+        if (!token)
+            continue;
+
+        int numero_node;
+        if (sscanf(token, "node_%d", &numero_node) != 1)
         {
-            if (src == dest)
-                continue;
-                
-            float peso;
-            fscanf(arquivo, "%f", &peso);
-            fscanf(arquivo, ", ");
-            if (peso != 0)
-                AdicionaAresta_Grafo(grafo, src, dest, peso);
+            fprintf(stderr, "Formato de nó inválido: %s\n", token);
+            continue;
         }
-        // adiciona uma aresta do grafo para ele mesmo com peso 0
-        AdicionaAresta_Grafo(grafo, src, src, 0.0f);
-        fscanf(arquivo, "\n");
+
+        if (primeiro_no)
+        {
+            AdicionaAresta_Grafo(grafo, numero_node, numero_node, 0.0f); // Adiciona aresta para ele mesmo com peso 0
+
+            primeiro_no = 0; // Desativa a flag
+        }
+        else
+        {
+            // Processa valores
+            int pos = 0;
+            while ((token = strtok(NULL, ",")) != NULL)
+            {
+                while (isspace(*token))
+                    token++; // Remove espaços
+
+                if (strcmp(token, "bomba") == 0 || atof(token) == 0)
+                    AdicionaAresta_Grafo(grafo, numero_node, pos, -1.0f); // Adiciona aresta com peso -1
+                    
+                    /*aqui é passado o ponteiro de pos, pois há uma situação (quando o nó acha ele mesmo) que é necessário que a posição avance e a distância lida seja
+                    posta no próximo nó (se o inicial for 50, quando ler a 50ª distância, a distância de 50 para 50 é definida como 0 e pos é incrementado para inserir a 50ª
+                    no 51º nó, já que a distância do nó para ele mesmo não está contida na entrada)*/
+                else
+                {
+                    float valor = atof(token);
+                    AdicionaAresta_Grafo(grafo, numero_node, pos, valor);
+                }
+                pos++;
+            }
+        }
+
+        // Adiciona aresta para ele mesmo com peso 0
+        AdicionaAresta_Grafo(grafo, numero_node, numero_node, 0.0f);
     }
 
     return grafo;
@@ -121,9 +251,7 @@ void Imprime_Grafo(Grafo* graph)
         printf("Vertex %d: ", i);
         while (temp) 
         {
-            if(temp->vertice != i){
-                printf("(%d, %.2f) ", temp->vertice, temp->peso);
-            }
+            printf("(%d, %.2f) ", temp->vertice, temp->peso);
             temp = temp->prox;
         }
         printf("\n");
@@ -144,7 +272,6 @@ void Dijkstra(Grafo* g){
     // Cria o nó auxiliar para a primeira PQ
     No* tam1 = Cria_No(N, 0);
     tam1->distancia = N;
-
 
     //Inicializa a lista de vértices
     for(int i=0; i<N; i++){
@@ -173,6 +300,9 @@ void Dijkstra(Grafo* g){
         for(No* vizinho = g->listaAdj[u]; vizinho != NULL; vizinho = vizinho->prox){
             int v = vizinho->vertice;
             float peso = vizinho->peso;
+
+            // Ignora arestas com peso -1 (inexistentes)
+            if (peso == -1) continue;
 
             // Relaxamento com decrease-key
             if(g->listaAdj[v]->distancia > g->listaAdj[u]->distancia + peso){
@@ -205,6 +335,10 @@ void Dijkstra(Grafo* g){
             printf("node_%d ", temp->vertice);
             temp = temp->pai;
             if(temp != NULL) printf("<- ");
+        }
+
+        if (atual->vertice == g->raiz) {
+            printf("<- node_%d ", g->raiz);
         }
         printf("(Distance: %.2f)\n", atual->distancia);
     }

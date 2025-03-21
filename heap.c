@@ -183,6 +183,7 @@ void libera_heap(Heap* heap){
         }
     }
     
+    free(heap->nos);
     free(heap);
 }
 
