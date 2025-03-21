@@ -18,7 +18,7 @@ Grafo* Le_Grafo(FILE* arquivo);
 void Imprime_Grafo(Grafo* grafo);
 
 // Algoritmo de Dijkstra
-void Dijkstra(Grafo* g);
+void Dijkstra(Grafo* g, FILE* arquivoSaida);
 
 // Funções auxiliares utilizadas internamente (na implementação do Dijkstra com PQ)
 float retornaDistancia(void* i);

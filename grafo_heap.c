@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "grafo.h"
+#include "grafo_heap.h"
 #include <string.h>
 #include "fila.h"
 
@@ -263,8 +263,8 @@ void Imprime_Grafo(Grafo* graph)
     }
 }
 
-void Dijkstra(Grafo* g){
-    if(g == NULL || g->listaAdj == NULL){
+void Dijkstra(Grafo* g, FILE* saida) {
+    if (g == NULL || g->listaAdj == NULL) {
         fprintf(stderr, "Grafo ou listaAdj é NULL.\n");
         return;
     }
@@ -323,29 +323,27 @@ void Dijkstra(Grafo* g){
     // A seguir, usamos uma segunda PQ para imprimir os caminhos mínimos
     No* tam2 = Cria_No(N, 0);
     tam2->distancia = N;
-    
 
     PQ* pq2 = PQ_init((void**)vertices, (void*)tam2, 
                       compara_min, retornaDistancia, liberaItem, mudaDistancia, imprimeItem);
 
-    
-    while(!PQ_empty(pq2)){
+    while (!PQ_empty(pq2)) {
         No* atual = (No*)PQ_delmin(pq2);
-        if(atual == NULL){
+        if (atual == NULL) {
             break;
         }
-        printf("SHORTEST PATH TO node_%d: ", atual->vertice);
+        fprintf(saida, "SHORTEST PATH TO node_%d: ", atual->vertice);
         No* temp = atual;
-        while(temp != NULL){ 
-            printf("node_%d ", temp->vertice);
+        while (temp != NULL) { 
+            fprintf(saida, "node_%d ", temp->vertice);
             temp = temp->pai;
-            if(temp != NULL) printf("<- ");
+            if (temp != NULL) fprintf(saida, "<- ");
         }
 
         if (atual->vertice == g->raiz) {
-            printf("<- node_%d ", g->raiz);
+            fprintf(saida, "<- node_%d ", g->raiz);
         }
-        printf("(Distance: %.2f)\n", atual->distancia);
+        fprintf(saida, "(Distance: %.2f)\n", atual->distancia);
     }
 
     PQ_finish(pq);
